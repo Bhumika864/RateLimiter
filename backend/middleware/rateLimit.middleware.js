@@ -14,12 +14,13 @@ const rateLimitMiddleware = async (req, res, next) => {
     endpoint: req.originalUrl,
     ip: clientIP,
     status: result.allowed ? 'allowed' : 'blocked',
-    reason: result.allowed ? null : 'rate limit exceeded'
+    reason: result.allowed ? null : (result.reason || 'rate limit exceeded')
   });
 
   if (!result.allowed) {
     return res.status(429).json({
-      error: 'Rate limit exceeded',
+      error: result.banned ? 'You have been temporarily banned' : 'Rate limit exceeded',
+      reason: result.reason,
       limit: result.limit,
       remaining: 0
     });
