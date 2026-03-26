@@ -10,7 +10,8 @@ const authenticateKey = async (req, res, next) => {
   }
 
   const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
-  const keyPrefix = apiKey.substring(0, 8);
+  // const keyPrefix = apiKey.substring(0, 8);
+  const keyPrefix = keyHash.slice(0, 12);
   const cacheKey = `apikey_cache:${keyHash}`;
 
   try {
@@ -20,7 +21,7 @@ const authenticateKey = async (req, res, next) => {
       req.keyPrefix = keyPrefix;
       return next();
     }
-  } catch(err) {
+  } catch (err) {
     console.warn('Redis cache read failed for API Key:', err);
   }
 
@@ -32,7 +33,7 @@ const authenticateKey = async (req, res, next) => {
 
   try {
     await redis.set(cacheKey, JSON.stringify(keyDoc), 'EX', 300);
-  } catch(err) {
+  } catch (err) {
     console.warn('Redis cache write failed for API Key:', err);
   }
 

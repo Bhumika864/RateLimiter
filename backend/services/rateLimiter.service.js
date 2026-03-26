@@ -18,72 +18,85 @@ const slidingWindowRateLimit = async (keyPrefix, plan) => {
   const now = Date.now();
   const windowStart = now - window * 1000;
 
-  const isBanned = await redis.get(banKey);
-  
-  if (isBanned) {
-    return {
-      allowed: false,
-      current: requests,
-      limit: requests,
-      remaining: 0,
-      banned: true,
-      reason: 'temporarily banned'
-    };
-  }
+  try {
+    const isBanned = await redis.get(banKey);
 
-  const luaScript = `
-    local key = KEYS[1]
-    local now = tonumber(ARGV[1])
-    local windowStart = tonumber(ARGV[2])
-    local limit = tonumber(ARGV[3])
-    local window = tonumber(ARGV[4])
-
-    redis.call('ZREMRANGEBYSCORE', key, '-inf', windowStart)
-    local count = redis.call('ZCARD', key)
-
-    if count >= limit then
-      return {0, count}
-    end
-
-    redis.call('ZADD', key, now, now)
-    redis.call('EXPIRE', key, window)
-
-    return {1, count + 1}
-  `;
-
-  const result = await redis.eval(
-    luaScript, 1, redisKey,
-    now, windowStart, requests, window
-  );
-
-  const allowed = result[0] === 1;
-
-  if (!allowed) {
-    const violations = await redis.incr(violationKey);
-    await redis.expire(violationKey, VIOLATION_WINDOW);
-    console.log('violations count:', violations);
-
-    if (violations >= VIOLATION_LIMIT) {
-      await redis.set(banKey, '1', 'EX', BAN_DURATION);
-      await redis.del(violationKey);
+    if (isBanned) {
       return {
         allowed: false,
-        current: result[1],
+        current: requests,
         limit: requests,
         remaining: 0,
         banned: true,
-        reason: `auto-banned for ${BAN_DURATION} seconds after ${VIOLATION_LIMIT} violations`
+        reason: 'temporarily banned'
       };
     }
-  }
 
-  return {
-    allowed,
-    current: result[1],
-    limit: requests,
-    remaining: Math.max(0, requests - result[1]),
-    banned: false
-  };
+    const luaScript = `
+      local key = KEYS[1]
+      local now = tonumber(ARGV[1])
+      local windowStart = tonumber(ARGV[2])
+      local limit = tonumber(ARGV[3])
+      local window = tonumber(ARGV[4])
+
+      redis.call('ZREMRANGEBYSCORE', key, '-inf', windowStart)
+      local count = redis.call('ZCARD', key)
+
+      if count >= limit then
+        return {0, count}
+      end
+
+      redis.call('ZADD', key, now, now)
+      redis.call('EXPIRE', key, window)
+
+      return {1, count + 1}
+    `;
+
+    const result = await redis.eval(
+      luaScript, 1, redisKey,
+      now, windowStart, requests, window
+    );
+
+    const allowed = result[0] === 1;
+
+    if (!allowed) {
+      const violations = await redis.incr(violationKey);
+      await redis.expire(violationKey, VIOLATION_WINDOW);
+
+      if (violations >= VIOLATION_LIMIT) {
+        await redis.set(banKey, '1', 'EX', BAN_DURATION);
+        await redis.del(violationKey);
+        return {
+          allowed: false,
+          current: result[1],
+          limit: requests,
+          remaining: 0,
+          banned: true,
+          reason: `auto-banned for ${BAN_DURATION} seconds`
+        };
+      }
+    }
+
+    return {
+      allowed,
+      current: result[1],
+      limit: requests,
+      remaining: Math.max(0, requests - result[1]),
+      banned: false
+    };
+
+  } catch (err) {
+    console.error('Redis error in rate limiter:', err.message);
+
+    // FAIL OPEN (important)
+    return {
+      allowed: true,
+      current: 0,
+      limit: requests,
+      remaining: requests,
+      banned: false
+    };
+  }
 };
 
 module.exports = { slidingWindowRateLimit, PLANS };

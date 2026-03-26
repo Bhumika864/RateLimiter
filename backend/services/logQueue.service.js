@@ -34,14 +34,21 @@ const processQueue = async () => {
     }
 
     // Safely pop up to BATCH_SIZE items from Redis
-    const elements = await redis.lrange(QUEUE_KEY, 0, BATCH_SIZE - 1);
-    
+    // const elements = await redis.lrange(QUEUE_KEY, 0, BATCH_SIZE - 1);
+    const elements = [];
+
+    for (let i = 0; i < BATCH_SIZE; i++) {
+      const item = await redis.rpop(QUEUE_KEY);
+      if (!item) break;
+      elements.push(item);
+    }
+
     if (elements.length > 0) {
       const logsToInsert = elements.map(el => JSON.parse(el));
-      
+
       // Batch insert to MongoDB
       await Log.insertMany(logsToInsert);
-      
+
       // Trim the inserted items from the list
       await redis.ltrim(QUEUE_KEY, elements.length, -1);
     }

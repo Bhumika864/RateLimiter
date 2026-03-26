@@ -64,7 +64,7 @@ router.delete('/:id', verifyToken, async (req, res) => {
       { _id: req.params.id, userId: req.user.userId },
       { isActive: false }
     );
-    
+
     if (keyDoc) {
       await redis.del(`apikey_cache:${keyDoc.keyHash}`);
     }

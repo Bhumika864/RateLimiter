@@ -8,5 +8,7 @@ const logSchema = new mongoose.Schema({
   reason: { type: String },
   timestamp: { type: Date, default: Date.now }
 });
+logSchema.index({ keyPrefix: 1, timestamp: -1 });
+logSchema.index({ ip: 1 });
 
 module.exports = mongoose.model('Log', logSchema);
