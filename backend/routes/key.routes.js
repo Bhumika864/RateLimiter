@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const jwt = require('jsonwebtoken');
 const ApiKey = require('../models/ApiKey.model');
+const redis = require('../config/redis');
 
 const verifyToken = (req, res, next) => {
   const token = req.cookies?.token;
@@ -59,10 +60,15 @@ router.get('/list', verifyToken, async (req, res) => {
 
 router.delete('/:id', verifyToken, async (req, res) => {
   try {
-    await ApiKey.findOneAndUpdate(
+    const keyDoc = await ApiKey.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.userId },
       { isActive: false }
     );
+    
+    if (keyDoc) {
+      await redis.del(`apikey_cache:${keyDoc.keyHash}`);
+    }
+
     res.json({ message: 'Key deactivated' });
   } catch (err) {
     res.status(500).json({ error: err.message });
