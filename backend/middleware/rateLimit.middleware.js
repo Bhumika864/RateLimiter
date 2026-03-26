@@ -1,5 +1,5 @@
 const { slidingWindowRateLimit } = require('../services/rateLimiter.service');
-const Log = require('../models/Log.model');
+const { pushLog } = require('../services/logQueue.service');
 
 const rateLimitMiddleware = async (req, res, next) => {
   const { keyPrefix, apiKey, clientIP } = req;
@@ -9,7 +9,7 @@ const rateLimitMiddleware = async (req, res, next) => {
   res.setHeader('X-RateLimit-Limit', result.limit);
   res.setHeader('X-RateLimit-Remaining', result.remaining);
 
-  await Log.create({
+  pushLog({
     keyPrefix,
     endpoint: req.originalUrl,
     ip: clientIP,

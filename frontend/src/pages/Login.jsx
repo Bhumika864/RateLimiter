@@ -10,7 +10,7 @@ export default function Login() {
   const handleSubmit = async () => {
     try {
       const res = await API.post('/auth/login', form)
-      localStorage.setItem('token', res.data.token)
+      localStorage.setItem('isAuthenticated', 'true')
       localStorage.setItem('plan', res.data.plan)
       navigate('/dashboard')
     } catch (err) {

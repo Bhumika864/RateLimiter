@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const connectDB = require('./config/db');
 const redis = require('./config/redis');
+const { startLogWorker } = require('./services/logQueue.service');
+const cookieParser = require('cookie-parser');
 
 const authRoutes = require('./routes/auth.routes');
 const keyRoutes = require('./routes/key.routes');
@@ -13,10 +15,15 @@ const rateLimitMiddleware = require('./middleware/rateLimit.middleware');
 
 const app = express();
 const cors = require('cors')
-app.use(cors({ origin: '*' }))
+app.use(cors({ 
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true 
+}))
 app.use(express.json());
+app.use(cookieParser());
 
 connectDB();
+startLogWorker();
 
 app.use('/auth', authRoutes);
 app.use('/keys', keyRoutes);

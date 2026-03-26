@@ -5,7 +5,7 @@ const Log = require('../models/Log.model');
 const redis = require('../config/redis');
 
 const verifyToken = (req, res, next) => {
-  const token = req.headers['authorization']?.split(' ')[1];
+  const token = req.cookies?.token;
   if (!token) return res.status(401).json({ error: 'Token missing' });
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET);

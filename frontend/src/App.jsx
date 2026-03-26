@@ -4,8 +4,8 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 
 const PrivateRoute = ({ children }) => {
-  const token = localStorage.getItem('token')
-  return token ? children : <Navigate to="/login" />
+  const isAuthenticated = localStorage.getItem('isAuthenticated')
+  return isAuthenticated ? children : <Navigate to="/login" />
 }
 
 function App() {
