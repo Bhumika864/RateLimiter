@@ -1,8 +1,8 @@
 const request = require('supertest');
+const redis = require('../config/redis');
 const mongoose = require('mongoose');
 const app = require('../app');
 const ApiKey = require('../models/ApiKey.model');
-const redis = require('../config/redis');
 const crypto = require('crypto');
 
 let rawKey;
@@ -13,14 +13,14 @@ beforeAll(async () => {
 
 afterAll(async () => {
     await mongoose.connection.close();
-    //   await redis.quit();
+    // await redis.quit();
 });
 
 beforeEach(async () => {
     await ApiKey.deleteMany({});
     await redis.flushall();
 
-    rawKey = 'rate-limit-key';
+    rawKey = 'ip-test-key';
     const keyHash = crypto.createHash('sha256').update(rawKey).digest('hex');
 
     await ApiKey.create({
@@ -33,30 +33,17 @@ beforeEach(async () => {
     });
 });
 
-describe('Rate Limiter', () => {
+describe('IP Blocking', () => {
 
-    it('should block after exceeding limit', async () => {
-        let res;
+    it('should block request if IP is blacklisted', async () => {
+        await redis.set('blocklist:127.0.0.1', '1');
+        await redis.set('blocklist:::ffff:127.0.0.1', '1');
 
-        for (let i = 0; i < 105; i++) {
-            res = await request(app)
-                .get('/api/test')
-                .set('x-api-key', rawKey);
-        }
+        const res = await request(app)
+            .get('/api/test')
+            .set('x-api-key', rawKey);
 
-        expect(res.statusCode).toBe(429);
-    });
-
-    it('should eventually ban user after repeated violations', async () => {
-        let res;
-
-        for (let i = 0; i < 200; i++) {
-            res = await request(app)
-                .get('/api/test')
-                .set('x-api-key', rawKey);
-        }
-
-        expect(res.body.error).toMatch(/banned/i);
+        expect(res.statusCode).toBe(403);
     });
 
 });

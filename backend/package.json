@@ -5,11 +5,12 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "test": "jest --testTimeout=10000 --forceExit"
+    "test": "jest --runInBand --testTimeout=10000"
   },
   "jest": {
-    "testEnvironment": "node",
-    "passWithNoTests": true
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.js"
+    ]
   },
   "keywords": [],
   "author": "",

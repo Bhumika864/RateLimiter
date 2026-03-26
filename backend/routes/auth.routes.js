@@ -4,8 +4,16 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User.model');
+const isValidEmail = (email) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
 
 router.post('/register', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !isValidEmail(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
   try {
     const { email, password } = req.body;
 
@@ -20,7 +28,6 @@ router.post('/register', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;

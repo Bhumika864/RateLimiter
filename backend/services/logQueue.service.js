@@ -61,6 +61,7 @@ const processQueue = async () => {
 };
 
 const startLogWorker = () => {
+  if (process.env.NODE_ENV === 'test') return;
   console.log('Started Background Log Queue Worker');
   setInterval(processQueue, PROCESS_INTERVAL_MS);
 };
