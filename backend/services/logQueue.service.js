@@ -48,9 +48,6 @@ const processQueue = async () => {
 
       // Batch insert to MongoDB
       await Log.insertMany(logsToInsert);
-
-      // Trim the inserted items from the list
-      await redis.ltrim(QUEUE_KEY, elements.length, -1);
     }
 
   } catch (err) {

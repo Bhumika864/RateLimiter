@@ -10,15 +10,14 @@ const authenticateKey = async (req, res, next) => {
   }
 
   const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
-  // const keyPrefix = apiKey.substring(0, 8);
-  const keyPrefix = keyHash.slice(0, 12);
   const cacheKey = `apikey_cache:${keyHash}`;
 
   try {
     const cachedKey = await redis.get(cacheKey);
     if (cachedKey) {
-      req.apiKey = JSON.parse(cachedKey);
-      req.keyPrefix = keyPrefix;
+      const parsed = JSON.parse(cachedKey);
+      req.apiKey = parsed;
+      req.keyPrefix = parsed.keyPrefix;
       return next();
     }
   } catch (err) {
@@ -38,7 +37,7 @@ const authenticateKey = async (req, res, next) => {
   }
 
   req.apiKey = keyDoc;
-  req.keyPrefix = keyPrefix;
+  req.keyPrefix = keyDoc.keyPrefix;
   next();
 };
 

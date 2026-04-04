@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from "react";
 import API from "../api/axios";
 import { useNavigate } from "react-router-dom";
@@ -43,14 +41,19 @@ export default function Dashboard() {
     fetchKeys();
   };
 
-  const fetchAnalytics = async (prefix) => {
-    setSelectedPrefix(prefix);
-    const res = await API.get(`/analytics/summary/${prefix}`);
-    setAnalytics(res.data);
-  };
+  useEffect(() => {
+    if (selectedPrefix) {
+      const interval = setInterval(() => {
+        fetchAnalytics(selectedPrefix, false);
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [selectedPrefix]);
 
   const logout = async () => {
-    try { await API.post('/auth/logout'); } catch(e) {}
+    try {
+      await API.post("/auth/logout");
+    } catch (e) {}
     localStorage.clear();
     navigate("/login");
   };

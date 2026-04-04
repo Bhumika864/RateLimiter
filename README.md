@@ -212,6 +212,3 @@ Current suite includes:
 - CI pipeline with lint + test on pull requests
 - role-based admin routes for global ops controls
 
-## License
-
-This project is available for educational and portfolio use.

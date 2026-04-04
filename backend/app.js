@@ -14,7 +14,17 @@ const rateLimitMiddleware = require('./middleware/rateLimit.middleware');
 const app = express();
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    // Allow any localhost origin (e.g., localhost:5173, 5174, 5178, 5179, etc.)
+    const isLocalhost = !origin || /^http:\/\/localhost:\d+$/.test(origin);
+    const isProductionOrigin = origin === process.env.FRONTEND_URL;
+
+    if (isLocalhost || isProductionOrigin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());

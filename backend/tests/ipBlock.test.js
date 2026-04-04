@@ -7,15 +7,6 @@ const crypto = require('crypto');
 
 let rawKey;
 
-beforeAll(async () => {
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/ratelimiter_test');
-});
-
-afterAll(async () => {
-    await mongoose.connection.close();
-    // await redis.quit();
-});
-
 beforeEach(async () => {
     await ApiKey.deleteMany({});
     await redis.flushall();
